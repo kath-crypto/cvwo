@@ -7,7 +7,6 @@ import {
   TextField,
   Button,
 } from "@mui/material";
-
 import { Topic } from "../../types";
 
 interface Props {
@@ -35,10 +34,7 @@ const TopicForm: React.FC<Props> = ({
         description: editingTopic.description || "",
       });
     } else {
-      setFormData({
-        title: "",
-        description: "",
-      });
+      setFormData({ title: "", description: "" });
     }
   }, [editingTopic, open]);
 
@@ -50,23 +46,16 @@ const TopicForm: React.FC<Props> = ({
   return (
     <Dialog open={open} onClose={onClose}>
       <form onSubmit={handleSubmit}>
-        <DialogTitle>
-          {editingTopic ? "Edit Topic" : "Create Topic"}
-        </DialogTitle>
-
+        <DialogTitle>{editingTopic ? "Edit Topic" : "Create Topic"}</DialogTitle>
         <DialogContent>
-
           <TextField
             label="Title"
             fullWidth
             required
             margin="dense"
             value={formData.title}
-            onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           />
-
           <TextField
             label="Description"
             fullWidth
@@ -78,21 +67,12 @@ const TopicForm: React.FC<Props> = ({
               setFormData({ ...formData, description: e.target.value })
             }
           />
-
         </DialogContent>
-
         <DialogActions>
-
           <Button onClick={onClose}>Cancel</Button>
-
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={!formData.title}
-          >
+          <Button type="submit" variant="contained" disabled={!formData.title}>
             {editingTopic ? "Update" : "Create"}
           </Button>
-
         </DialogActions>
       </form>
     </Dialog>

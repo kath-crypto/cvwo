@@ -3,19 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import {
   Grid,
   Typography,
-  Button,
   Box,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
+  Button,
 } from '@mui/material';
 import { Add as AddIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { Post } from '../../types';
-import { getPosts, createPost } from '../../services/api';
+import { getPosts, createPost, updatePost, deletePost } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import PostCard from './PostCard';
+import PostForm from './PostForm';
 
 interface PostListProps {
   topicId: number;
@@ -26,8 +22,8 @@ const PostList: React.FC<PostListProps> = ({ topicId }) => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [formData, setFormData] = useState({ title: '', content: '' });
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
 
   useEffect(() => {
     fetchPosts();
@@ -44,14 +40,35 @@ const PostList: React.FC<PostListProps> = ({ topicId }) => {
     }
   };
 
-  const handleCreatePost = async () => {
+  const handleFormSubmit = async (data: { title: string; content: string }) => {
     try {
-      await createPost({ ...formData, topic_id: topicId });
-      fetchPosts();
-      setOpenDialog(false);
-      setFormData({ title: '', content: '' });
+      if (editingPost) {
+        const res = await updatePost(editingPost.id, data);
+        setPosts(posts.map((p) => (p.id === editingPost.id ? res.data : p)));
+      } else {
+        const res = await createPost({ ...data, topic_id: topicId });
+        setPosts([...posts, res.data]);
+      }
     } catch (error) {
-      console.error('Failed to create post:', error);
+      console.error('Failed to save post:', error);
+    } finally {
+      setFormOpen(false);
+      setEditingPost(null);
+    }
+  };
+
+  const handleEdit = (post: Post) => {
+    setEditingPost(post);
+    setFormOpen(true);
+  };
+
+  const handleDelete = async (post: Post) => {
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    try {
+      await deletePost(post.id);
+      setPosts(posts.filter((p) => p.id !== post.id));
+    } catch (error) {
+      console.error('Failed to delete post:', error);
     }
   };
 
@@ -59,13 +76,13 @@ const PostList: React.FC<PostListProps> = ({ topicId }) => {
 
   return (
     <Box>
-      {/* Back Button */}
+      {/* Back to Topics Button */}
       <Box mb={3}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(`/topics/`)}
+        <Button 
+          startIcon={<ArrowBackIcon />} 
+          onClick={() => navigate('/topics')}
         >
-          Back to Topic
+          Back to Topics
         </Button>
       </Box>
 
@@ -73,11 +90,7 @@ const PostList: React.FC<PostListProps> = ({ topicId }) => {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h5">Posts</Typography>
         {user && (
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setOpenDialog(true)}
-          >
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setFormOpen(true)}>
             New Post
           </Button>
         )}
@@ -95,45 +108,27 @@ const PostList: React.FC<PostListProps> = ({ topicId }) => {
         {posts.map((post) => (
           <Grid item xs={12} key={post.id}>
             <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
+            {/* Edit/Delete Buttons */}
+            {user && user.id === post.user_id && (
+              <Box mt={1} display="flex" gap={1}>
+                <Button size="small" variant="outlined" onClick={() => handleEdit(post)}>Edit</Button>
+                <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(post)}>Delete</Button>
+              </Box>
+            )}
           </Grid>
         ))}
       </Grid>
 
-      {/* Create Post Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Create New Post</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Title"
-            fullWidth
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            required
-          />
-          <TextField
-            margin="dense"
-            label="Content"
-            fullWidth
-            multiline
-            rows={6}
-            value={formData.content}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            required
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button
-            onClick={handleCreatePost}
-            variant="contained"
-            disabled={!formData.title || !formData.content}
-          >
-            Create
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Post Form Dialog */}
+      <PostForm
+        open={formOpen}
+        onClose={() => {
+          setFormOpen(false);
+          setEditingPost(null);
+        }}
+        onSubmit={handleFormSubmit}
+        editingPost={editingPost}
+      />
     </Box>
   );
 };

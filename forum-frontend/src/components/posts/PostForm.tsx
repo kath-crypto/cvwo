@@ -46,18 +46,16 @@ const PostForm: React.FC<PostFormProps> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <form onSubmit={handleSubmit}>
-        <DialogTitle>
-          {editingPost ? 'Edit Post' : 'Create New Post'}
-        </DialogTitle>
+        <DialogTitle>{editingPost ? 'Edit Post' : 'Create Post'}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
             label="Title"
             fullWidth
+            required
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            required
           />
           <TextField
             margin="dense"
@@ -65,18 +63,14 @@ const PostForm: React.FC<PostFormProps> = ({
             fullWidth
             multiline
             rows={6}
+            required
             value={formData.content}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            required
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
-          <Button 
-            type="submit" 
-            variant="contained" 
-            disabled={!formData.title || !formData.content}
-          >
+          <Button type="submit" variant="contained" disabled={!formData.title || !formData.content}>
             {editingPost ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
